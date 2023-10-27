@@ -1,4 +1,4 @@
-# hash:sha256:d293c22a6ee8f9cfd7d2a7314027c6f42fb57ef60f0d4724469dd2dbe377eb97
+# hash:sha256:a3ade062bfcc1f7e0f55b32a310f914a7add908bad5c1054f166295766a60c85
 FROM registry.codeocean.allenneuraldynamics.org/codeocean/jupyterlab:3.0.9-miniconda4.9.2-python3.8-ubuntu20.04
 
 ARG DEBIAN_FRONTEND=noninteractive
@@ -9,7 +9,6 @@ COPY git-askpass /
 
 RUN pip install -U --no-cache-dir \
     aind-data-access-api \
-    boto3 \
     pymongo \
     pynwb \
     ruamel-yaml
