@@ -25,10 +25,10 @@ def run():
             phys_type = 'ecephys'
         elif 'multiplane-ophys' in file:
             phys_type = 'multiplane-ophys'
-        subject_match = re.search(r'_(\d{6})', file)
+        subject_match = re.search(r'_(\d+)_', file)
         if subject_match:
             subject_id = subject_match.group(1)
-        date_match = re.search(r'_(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})', file)
+        date_match = re.search(r'(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})', file)
         if date_match:
             time = date_match.group(1)
 
@@ -53,17 +53,15 @@ def run():
     metadata = (results[0].subject)
     dob = metadata['date_of_birth']
 
-    utc_datetime = datetime.strptime(dob, "%Y-%m-%d").replace(tzinfo=pytz.UTC)
-    date_string = processing['data_processes'][0]['start_date_time']
+    subject_dob_utc_datetime = datetime.strptime(dob, "%Y-%m-%d").replace(tzinfo=pytz.UTC)
+    session_start_date_string = processing['data_processes'][0]['start_date_time']
     date_format = "%Y-%m-%dT%H:%M:%S.%f%z"
 
     # Use strptime to parse the string into a datetime object
-    date_object = datetime.strptime(date_string, date_format)
-    time_difference = date_object - utc_datetime
+    session_start_date_time = datetime.strptime(session_start_date_string, date_format)
+    subject_age = session_start_datetime - subject_dob_utc_datetime
 
-    # Get the number of days
-    days_difference = time_difference.days
-    age = "P" + str(days_difference) + "D"
+    age = "P" + str(subject_age) + "D"
     subject = pynwb.file.Subject(
         subject_id=metadata["subject_id"],
         species="Mus musculus",
