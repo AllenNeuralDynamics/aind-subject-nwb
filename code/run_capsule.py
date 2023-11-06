@@ -32,14 +32,6 @@ def run():
         if date_match:
             time = date_match.group(1)
 
-    # phys_type = 'ecephys'
-    # time = '2023-08-31_12-33-31'
-    # subject_id = '668755'
-
-    # phys_type = "multiplane-ophys"
-    # time = '2023-07-18_10-56-26'
-    # subject_id = '681417'
-
     results = doc_db_client.retrieve_data_asset_records(
         filter_query={
             "$and": [
@@ -49,6 +41,10 @@ def run():
         },
         paginate_batch_size=100,
     )
+    if not results:
+        print("No data records found.")
+        raise Exception("No data records found.")
+    
     processing = (results[0].processing)
     metadata = (results[0].subject)
     dob = metadata['date_of_birth']
