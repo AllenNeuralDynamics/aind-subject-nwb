@@ -59,14 +59,14 @@ def run():
 
     # Use strptime to parse the string into a datetime object
     session_start_date_time = datetime.strptime(session_start_date_string, date_format)
-    subject_age = session_start_datetime - subject_dob_utc_datetime
+    subject_age = session_start_date_time - subject_dob_utc_datetime
 
     age = "P" + str(subject_age) + "D"
     subject = pynwb.file.Subject(
         subject_id=metadata["subject_id"],
         species="Mus musculus",
         sex=metadata["sex"][0].upper(),
-        date_of_birth=utc_datetime,
+        date_of_birth=subject_dob_utc_datetime,
         age=age,
         genotype=metadata["genotype"],
         description=None,
@@ -77,7 +77,7 @@ def run():
     nwbfile = NWBFile(
         session_description="Test File",  # required
         identifier=str(uuid4()),  # required
-        session_start_time=date_object,  # required
+        session_start_time=session_start_date_time,  # required
         lab="Allen Institute",  # optional
         institution="Allen Institute",  # optional
         subject=subject,
