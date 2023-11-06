@@ -22,7 +22,10 @@ def run():
         collection=DOC_DB_COLLECTION,)
     # Create an argument parser
     parser = argparse.ArgumentParser(description="Process a datasset of a subject")
-    parser.add_argument("--asset_name", type=str,  default =r'multiplane-ophys_681417_2023-08-02_10-15-59' )
+    parser.add_argument("--asset_name", 
+    type=str,  
+    default =r'multiplane-ophys_681417_2023-08-02_10-15-59',
+    help = "Path to the data asset of the session" )
 
     # Parse the command-line arguments
     args = parser.parse_args()
