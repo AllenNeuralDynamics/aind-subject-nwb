@@ -3,6 +3,7 @@ import json
 import pynwb
 import os
 import re
+import argparse
 from datetime import datetime
 import pytz
 from pynwb import NWBHDF5IO, NWBFile
@@ -19,18 +20,25 @@ def run():
         host=DOC_DB_HOST,
         database=DOC_DB_DATABASE,
         collection=DOC_DB_COLLECTION,)
+    # Create an argument parser
+    parser = argparse.ArgumentParser(description="Process a datasset of a subject")
+    parser.add_argument("--asset_name", type=str,  default =r'multiplane-ophys_681417_2023-08-02_10-15-59' )
 
-    for file in os.listdir('/data'):
-        if 'ecephys' in file:
-            phys_type = 'ecephys'
-        elif 'multiplane-ophys' in file:
-            phys_type = 'multiplane-ophys'
-        subject_match = re.search(r'_(\d+)_', file)
-        if subject_match:
-            subject_id = subject_match.group(1)
-        date_match = re.search(r'(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})', file)
-        if date_match:
-            time = date_match.group(1)
+    # Parse the command-line arguments
+    args = parser.parse_args()
+    asset_name = args.asset_name
+
+    file = asset_name
+    if 'ecephys' in file:
+        phys_type = 'ecephys'
+    elif 'multiplane-ophys' in file:
+        phys_type = 'multiplane-ophys'
+    subject_match = re.search(r'_(\d+)_', file)
+    if subject_match:
+        subject_id = subject_match.group(1)
+    date_match = re.search(r'(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})', file)
+    if date_match:
+        time = date_match.group(1)
 
     results = doc_db_client.retrieve_data_asset_records(
         filter_query={
