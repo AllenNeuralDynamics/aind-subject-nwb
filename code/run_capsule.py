@@ -150,6 +150,8 @@ def run():
     with io_class(str(results_folder / f"{asset_name}.nwb"), mode="w") as io:
         io.write(nwbfile)
 
+    print(f"Saved {results_folder / f'{asset_name}.nwb'}")
+
 
 if __name__ == "__main__":
     run()
