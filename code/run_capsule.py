@@ -93,7 +93,6 @@ def run():
         if len(data_assets) != 1:
             raise ValueError(f"Expected exactly one data asset attached, got {len(data_assets)}")
         data_asset = data_assets[0]
-        asset_name = data_asset.name
         data_description_file = data_asset / "data_description.json"
         subject_metadata_file = data_asset / "subject.json"
         assert data_description_file.is_file(), f"Missing data description file: {data_description_file}"
@@ -102,6 +101,8 @@ def run():
             data_description = json.load(f)
         with open(subject_metadata_file) as f:
             subject_metadata = json.load(f)
+        asset_name = data_description["name"]
+
 
     print(f"Backend: {backend}")
     print(f"Asset name: {asset_name}")
