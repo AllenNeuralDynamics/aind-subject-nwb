@@ -26,8 +26,8 @@ parser = argparse.ArgumentParser(description="Convert subject info to NWB")
 # this allows to pass positional argument (in Code Ocean) or optional argument (from API/CLI)
 backend_group = parser.add_mutually_exclusive_group()
 backend_help = "NWB backend. It can be either 'hdf5' or 'zarr'."
-backend_group.add_argument("--backend", choices=["hdf5", "zarr"], help=backend_help)
-backend_group.add_argument("static_backend", nargs="?", default="hdf5", help=backend_help)
+backend_group.add_argument("--backend", choices=["hdf5", "zarr"], default="zarr", help=backend_help)
+backend_group.add_argument("static_backend", nargs="?", help=backend_help)
 
 
 data_asset_group = parser.add_mutually_exclusive_group()
