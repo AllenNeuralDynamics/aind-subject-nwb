@@ -23,21 +23,25 @@ results_folder = Path("../results")
 # Create an argument parser
 parser = argparse.ArgumentParser(description="Convert subject info to NWB")
 
-# this allows to pass positional argument (in Code Ocean) or optional argument (from API/CLI)
+# this allows us to pass positional argument (in Code Ocean)
+# or optional argument (from API/CLI)
 backend_group = parser.add_mutually_exclusive_group()
 backend_help = "NWB backend. It can be either 'hdf5' or 'zarr'."
-backend_group.add_argument("--backend", choices=["hdf5", "zarr"], default="zarr", help=backend_help)
+backend_group.add_argument(
+    "--backend", choices=["hdf5", "zarr"], default="zarr", help=backend_help)
 backend_group.add_argument("static_backend", nargs="?", help=backend_help)
 
 
 data_asset_group = parser.add_mutually_exclusive_group()
 data_asset_help = (
-    "Path to the data asset of the session. When provided, the metadata are fetched from the "
-    "AIND metadata database. If None, and the attached data asset is used to fetch relevant "
+    "Path to the data asset of the session. When provided, "
+    "the metadata are fetched from the AIND metadata database. "
+    "If None, and the attached data asset is used to fetch relevant "
     "metadata."
 )
 data_asset_group.add_argument("--asset-name", type=str, help=data_asset_help)
-data_asset_group.add_argument("static_asset_name", nargs="?", help=data_asset_help)
+data_asset_group.add_argument(
+    "static_asset_name", nargs="?", help=data_asset_help)
 
 
 def run():
@@ -69,7 +73,8 @@ def run():
         subject_match = re.search(r"_(\d+)_", asset_name)
         if subject_match:
             subject_id = subject_match.group(1)
-        date_match = re.search(r"(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})", asset_name)
+        date_match = re.search(
+            r"(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})", asset_name)
         if date_match:
             time = date_match.group(1)
         else:
@@ -77,7 +82,8 @@ def run():
 
         results = doc_db_client.retrieve_data_asset_records(
             filter_query={
-                "$and": [{"_name": {"$regex": f"{modality}.*{time}"}}, {"subject.subject_id": f"{subject_id}"}]
+                "$and": [{"_name": {"$regex": f"{modality}.*{time}"}},
+                         {"subject.subject_id": f"{subject_id}"}]
             },
             paginate_batch_size=100,
         )
@@ -91,24 +97,28 @@ def run():
         # In this case we expect a single data asset folder as input
         data_assets = [p for p in data_folder.iterdir() if p.is_dir()]
         if len(data_assets) != 1:
-            raise ValueError(f"Expected exactly one data asset attached, got {len(data_assets)}")
+            raise ValueError(
+                f"Expected exactly one data asset attached,
+                got {len(data_assets)}")
         data_asset = data_assets[0]
         data_description_file = data_asset / "data_description.json"
         subject_metadata_file = data_asset / "subject.json"
-        assert data_description_file.is_file(), f"Missing data description file: {data_description_file}"
-        assert subject_metadata_file.is_file(), f"Missing subject metadata file: {subject_metadata_file}"
+        assert data_description_file.is_file(
+        ), f"Missing data description file: {data_description_file}"
+        assert subject_metadata_file.is_file(
+        ), f"Missing subject metadata file: {subject_metadata_file}"
         with open(data_description_file) as f:
             data_description = json.load(f)
         with open(subject_metadata_file) as f:
             subject_metadata = json.load(f)
         asset_name = data_description["name"]
 
-
     print(f"Backend: {backend}")
     print(f"Asset name: {asset_name}")
 
     dob = subject_metadata["date_of_birth"]
-    subject_dob_utc_datetime = datetime.strptime(dob, "%Y-%m-%d").replace(tzinfo=pytz.UTC)
+    subject_dob_utc_datetime = datetime.strptime(
+        dob, "%Y-%m-%d").replace(tzinfo=pytz.UTC)
 
     date_format = "%Y-%m-%dT%H:%M:%S"
     if "creation_date" in data_description:
@@ -119,7 +129,8 @@ def run():
     institution = data_description["institution"]["name"]
 
     # Use strptime to parse the string into a datetime object
-    session_start_date_time = datetime.strptime(session_start_date_string, date_format).replace(tzinfo=pytz.UTC)
+    session_start_date_time = datetime.strptime(
+        session_start_date_string, date_format).replace(tzinfo=pytz.UTC)
     subject_age = session_start_date_time - subject_dob_utc_datetime
 
     age = "P" + str(subject_age) + "D"
@@ -131,7 +142,8 @@ def run():
         age=age,
         genotype=subject_metadata["genotype"],
         description=None,
-        strain=subject_metadata["background_strain"] or subject_metadata["breeding_group"],
+        strain=subject_metadata["background_strain"] or
+        subject_metadata["breeding_group"],
     )
 
     # Store and write NWB file
