@@ -1,4 +1,5 @@
 """ Export NWB file with subject information """
+
 import json
 import re
 import argparse
@@ -28,7 +29,8 @@ parser = argparse.ArgumentParser(description="Convert subject info to NWB")
 backend_group = parser.add_mutually_exclusive_group()
 backend_help = "NWB backend. It can be either 'hdf5' or 'zarr'."
 backend_group.add_argument(
-    "--backend", choices=["hdf5", "zarr"], default="zarr", help=backend_help)
+    "--backend", choices=["hdf5", "zarr"], default="zarr", help=backend_help
+)
 backend_group.add_argument("static_backend", nargs="?", help=backend_help)
 
 
@@ -41,7 +43,8 @@ data_asset_help = (
 )
 data_asset_group.add_argument("--asset-name", type=str, help=data_asset_help)
 data_asset_group.add_argument(
-    "static_asset_name", nargs="?", help=data_asset_help)
+    "static_asset_name", nargs="?", help=data_asset_help
+)
 
 
 def run():
@@ -74,7 +77,8 @@ def run():
         if subject_match:
             subject_id = subject_match.group(1)
         date_match = re.search(
-            r"(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})", asset_name)
+            r"(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})", asset_name
+        )
         if date_match:
             time = date_match.group(1)
         else:
@@ -82,8 +86,10 @@ def run():
 
         results = doc_db_client.retrieve_data_asset_records(
             filter_query={
-                "$and": [{"_name": {"$regex": f"{modality}.*{time}"}},
-                         {"subject.subject_id": f"{subject_id}"}]
+                "$and": [
+                    {"_name": {"$regex": f"{modality}.*{time}"}},
+                    {"subject.subject_id": f"{subject_id}"},
+                ]
             },
             paginate_batch_size=100,
         )
@@ -104,9 +110,11 @@ def run():
         data_asset = data_assets[0]
         data_description_file = data_asset / "data_description.json"
         subject_metadata_file = data_asset / "subject.json"
-        assert data_description_file.is_file(
+        assert (
+            data_description_file.is_file()
         ), f"Missing data description file: {data_description_file}"
-        assert subject_metadata_file.is_file(
+        assert (
+            subject_metadata_file.is_file()
         ), f"Missing subject metadata file: {subject_metadata_file}"
         with open(data_description_file) as f:
             data_description = json.load(f)
@@ -118,8 +126,9 @@ def run():
     print(f"Asset name: {asset_name}")
 
     dob = subject_metadata["date_of_birth"]
-    subject_dob_utc_datetime = datetime.strptime(
-        dob, "%Y-%m-%d").replace(tzinfo=pytz.UTC)
+    subject_dob_utc_datetime = datetime.strptime(dob, "%Y-%m-%d").replace(
+        tzinfo=pytz.UTC
+    )
 
     date_format = "%Y-%m-%dT%H:%M:%S"
     if "creation_date" in data_description:
@@ -131,7 +140,8 @@ def run():
 
     # Use strptime to parse the string into a datetime object
     session_start_date_time = datetime.strptime(
-        session_start_date_string, date_format).replace(tzinfo=pytz.UTC)
+        session_start_date_string, date_format
+    ).replace(tzinfo=pytz.UTC)
     subject_age = session_start_date_time - subject_dob_utc_datetime
 
     age = "P" + str(subject_age) + "D"
@@ -143,8 +153,8 @@ def run():
         age=age,
         genotype=subject_metadata["genotype"],
         description=None,
-        strain=subject_metadata["background_strain"] or
-        subject_metadata["breeding_group"],
+        strain=subject_metadata["background_strain"]
+        or subject_metadata["breeding_group"],
     )
 
     # Store and write NWB file
