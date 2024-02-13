@@ -98,8 +98,9 @@ def run():
         data_assets = [p for p in data_folder.iterdir() if p.is_dir()]
         if len(data_assets) != 1:
             raise ValueError(
-                f"Expected exactly one data asset attached,
-                got {len(data_assets)}")
+                f"Expected exactly one data asset attached, "
+                f"got {len(data_assets)}"
+            )
         data_asset = data_assets[0]
         data_description_file = data_asset / "data_description.json"
         subject_metadata_file = data_asset / "subject.json"
