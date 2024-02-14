@@ -7,6 +7,7 @@ import argparse
 from datetime import datetime
 import pytz
 from pynwb import NWBHDF5IO, NWBFile
+from hdmf_zarr import NWBZarrIO
 from uuid import uuid4
 from aind_data_access_api.document_db import MetadataDbClient
 
@@ -94,7 +95,8 @@ def run():
     # Naming Convention should be decided by AIND Schema.
     # It seems like the subject/processing/etc. Json
     # Files should also be added to the results folder?
-    io = NWBHDF5IO(r"/results/test.nwb", mode="w")
+    #io = NWBHDF5IO(r"/results/test.nwb", mode="w")
+    io = NWBZarrIO(r"/results/test.nwb", mode="w")
     io.write(nwbfile)
     io.close()
     pass
