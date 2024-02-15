@@ -55,6 +55,9 @@ def run():
 
     if asset_name is not None and asset_name == "":
         asset_name = None
+    # hot-fix for parameter in pipeline
+    if backend == "null":
+        backend = args.backend
 
     if backend == "hdf5":
         io_class = NWBHDF5IO
