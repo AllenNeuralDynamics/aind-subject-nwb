@@ -50,7 +50,7 @@ data_asset_group.add_argument(
 def run():
     # Parse the command-line arguments
     args = parser.parse_args()
-    backend = args.backend or args.static_backend
+    backend = args.static_backend or args.backend
     asset_name = args.asset_name or args.static_asset_name
 
     if asset_name is not None and asset_name == "":
