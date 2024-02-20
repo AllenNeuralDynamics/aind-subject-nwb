@@ -1,5 +1,14 @@
 metadata_version: 1
 name: NWB-Packaging-Subject-Capsule
-description: Basic structure of a capsule to be customized as needed.
+description: This specialized capsule is designed to create a base NWB file including
+  metadata related to the institute and subject. This should serve as the foundation
+  used by capsules further downstreams as they create their own intermediary NWB files.
+  By including this subject metadata in each of the NWB files, they should pass Dandi
+  and NWB validation criteria. The package queries the AIND Data Assets using the
+  subject id, date of the session, and the physiology type of the sessions.
+tags:
+- NWB
 authors:
 - name: AIND
+- name: Ahad Bawany
+- name: Alessio Buccino
