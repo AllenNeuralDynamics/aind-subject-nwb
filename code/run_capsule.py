@@ -156,8 +156,8 @@ def run():
         age=age,
         genotype=subject_metadata["genotype"],
         description=None,
-        strain=subject_metadata["background_strain"]
-        or subject_metadata["breeding_group"],
+        strain=subject_metadata.get("background_strain")
+        or subject_metadata.get("breeding_group"),
     )
 
     # Store and write NWB file
