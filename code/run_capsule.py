@@ -148,9 +148,13 @@ def run():
     subject_age = session_start_date_time - subject_dob_utc_datetime
 
     age = "P" + str(subject_age) + "D"
+    if isinstance(subject_metadata["species"], dict):
+        species = subject_metadata["species"]["name"]
+    else:
+        species = subject_metadata["species"]
     subject = Subject(
         subject_id=subject_metadata["subject_id"],
-        species=subject_metadata["species"]["name"],
+        species=species,
         sex=subject_metadata["sex"][0].upper(),
         date_of_birth=subject_dob_utc_datetime,
         age=age,
