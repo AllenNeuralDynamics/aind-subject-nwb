@@ -129,7 +129,7 @@ def run():
     print(f"Asset name: {asset_name}")
 
     dob = subject_metadata["date_of_birth"]
-    subject_dob_utc_datetime = datetime.strptime(dob, "%Y-%m-%d").replace(
+    subject_dob = datetime.strptime(dob, "%Y-%m-%d").replace(
         tzinfo=pytz.timezone("US/Pacific")
     )
 
@@ -152,7 +152,7 @@ def run():
         session_start_date_time = datetime.strptime(
             session_start_date_string, date_format_no_tz
         ).replace(tzinfo=pytz.timezone("US/Pacific"))
-    subject_age = session_start_date_time - subject_dob_utc_datetime
+    subject_age = session_start_date_time - subject_dob
 
     age = "P" + str(subject_age) + "D"
     if isinstance(subject_metadata["species"], dict):
@@ -163,7 +163,7 @@ def run():
         subject_id=subject_metadata["subject_id"],
         species=species,
         sex=subject_metadata["sex"][0].upper(),
-        date_of_birth=subject_dob_utc_datetime,
+        date_of_birth=subject_dob,
         age=age,
         genotype=subject_metadata["genotype"],
         description=None,
