@@ -130,10 +130,12 @@ def run():
 
     dob = subject_metadata["date_of_birth"]
     subject_dob_utc_datetime = datetime.strptime(dob, "%Y-%m-%d").replace(
-        tzinfo=pytz.UTC
+        tzinfo=pytz.timezone("US/Pacific")
     )
 
-    date_format = "%Y-%m-%dT%H:%M:%S"
+    date_format_no_tz = "%Y-%m-%dT%H:%M:%S"
+    date_format_tz = "%Y-%m-%dT%H:%M:%S%z"
+
     if "creation_date" in data_description:
         session_start_date_string = f"{data_description['creation_date']}T{data_description['creation_time'].split('.')[0]}"
     else:
@@ -142,9 +144,14 @@ def run():
     institution = data_description["institution"]["name"]
 
     # Use strptime to parse the string into a datetime object
-    session_start_date_time = datetime.strptime(
-        session_start_date_string, date_format
-    ).replace(tzinfo=pytz.UTC)
+    try:
+        session_start_date_time = datetime.strptime(
+            session_start_date_string, date_format_tz
+        )
+    except:
+        session_start_date_time = datetime.strptime(
+            session_start_date_string, date_format_no_tz
+        ).replace(tzinfo=pytz.timezone("US/Pacific"))
     subject_age = session_start_date_time - subject_dob_utc_datetime
 
     age = "P" + str(subject_age) + "D"
