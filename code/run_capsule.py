@@ -141,7 +141,10 @@ def run():
     else:
         session_start_date_string = data_description["creation_time"]
     session_id = data_description["name"]
-    institution = data_description["institution"]["name"]
+    if isinstance(data_description["institution"], str):
+        institution = data_description["institution"]
+    elif isinstance(data_description["institution"], dict):
+        institution = data_description["institution"].get("name", None)
 
     # Use strptime to parse the string into a datetime object
     try:
