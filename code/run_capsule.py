@@ -135,6 +135,7 @@ def run():
 
     date_format_no_tz = "%Y-%m-%dT%H:%M:%S"
     date_format_tz = "%Y-%m-%dT%H:%M:%S%z"
+    date_format_frac_tz = "%Y-%m-%dT%H:%M:%S.%f%z"
 
     if "creation_date" in data_description:
         session_start_date_string = f"{data_description['creation_date']}T{data_description['creation_time'].split('.')[0]}"
@@ -147,14 +148,17 @@ def run():
         institution = data_description["institution"].get("name", None)
 
     # Use strptime to parse the string into a datetime object
+def parse_datetime(session_start_date_string):
     try:
-        session_start_date_time = datetime.strptime(
-            session_start_date_string, date_format_tz
-        )
-    except:
-        session_start_date_time = datetime.strptime(
-            session_start_date_string, date_format_no_tz
-        ).replace(tzinfo=pytz.timezone("US/Pacific"))
+        # Try parsing with fractional seconds and timezone
+        session_start_date_time = datetime.strptime(session_start_date_string, date_format_frac_tz)
+    except ValueError:
+        try:
+            # Try parsing with timezone
+            session_start_date_time =  datetime.strptime(session_start_date_string, date_format_tz)
+        except ValueError:
+            # Fallback to no timezone, assume US/Pacific timezone
+            session_start_date_time =  datetime.strptime(session_start_date_string, date_format_no_tz).replace(tzinfo=pytz.timezone("US/Pacific"))
     subject_age = session_start_date_time - subject_dob
 
     age = "P" + str(subject_age) + "D"
