@@ -148,7 +148,6 @@ def run():
         institution = data_description["institution"].get("name", None)
 
     # Use strptime to parse the string into a datetime object
-def parse_datetime(session_start_date_string):
     try:
         # Try parsing with fractional seconds and timezone
         session_start_date_time = datetime.strptime(session_start_date_string, date_format_frac_tz)
