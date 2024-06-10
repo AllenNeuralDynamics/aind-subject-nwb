@@ -3,8 +3,10 @@
 import json
 import re
 import argparse
+import time
 from pathlib import Path
 import pytz
+import datetime as dt
 from datetime import datetime
 
 from pynwb import NWBHDF5IO, NWBFile
@@ -12,7 +14,6 @@ from pynwb.file import Subject
 from hdmf_zarr import NWBZarrIO
 from uuid import uuid4
 
-from aind_data_access_api.document_db import MetadataDbClient
 
 DOC_DB_HOST = "api.allenneuraldynamics.org"
 DOC_DB_DATABASE = "metadata"
@@ -67,6 +68,8 @@ def run():
         raise ValueError(f"Unknown backend: {backend}")
 
     if asset_name is not None:
+        from aind_data_access_api.document_db import MetadataDbClient
+
         doc_db_client = MetadataDbClient(
             host=DOC_DB_HOST,
             database=DOC_DB_DATABASE,
@@ -83,14 +86,14 @@ def run():
             r"(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})", asset_name
         )
         if date_match:
-            time = date_match.group(1)
+            time_str = date_match.group(1)
         else:
             raise Exception("Could not find a date match")
 
         results = doc_db_client.retrieve_data_asset_records(
             filter_query={
                 "$and": [
-                    {"_name": {"$regex": f"{modality}.*{time}"}},
+                    {"_name": {"$regex": f"{modality}.*{time_str}"}},
                     {"subject.subject_id": f"{subject_id}"},
                 ]
             },
@@ -113,70 +116,89 @@ def run():
         data_asset = data_assets[0]
         data_description_file = data_asset / "data_description.json"
         subject_metadata_file = data_asset / "subject.json"
-        assert (
-            data_description_file.is_file()
-        ), f"Missing data description file: {data_description_file}"
-        assert (
-            subject_metadata_file.is_file()
-        ), f"Missing subject metadata file: {subject_metadata_file}"
-        with open(data_description_file) as f:
-            data_description = json.load(f)
-        with open(subject_metadata_file) as f:
-            subject_metadata = json.load(f)
-        asset_name = data_description["name"]
+        if data_description_file.is_file():
+            with open(data_description_file) as f:
+                data_description = json.load(f)
+            asset_name = data_description["name"]
+        else:
+            data_description = None
+            asset_name = None
+        if subject_metadata_file.is_file():
+            with open(subject_metadata_file) as f:
+                subject_metadata = json.load(f)
+        else:
+            subject_metadata = None
 
     print(f"Backend: {backend}")
     print(f"Asset name: {asset_name}")
 
-    dob = subject_metadata["date_of_birth"]
-    subject_dob = datetime.strptime(dob, "%Y-%m-%d").replace(
-        tzinfo=pytz.timezone("US/Pacific")
-    )
+    if data_description is not None:
+        timezone_info = pytz.timezone("US/Pacific")
+        date_format_no_tz = "%Y-%m-%dT%H:%M:%S"
+        date_format_tz = "%Y-%m-%dT%H:%M:%S%z"
 
-    date_format_no_tz = "%Y-%m-%dT%H:%M:%S"
-    date_format_tz = "%Y-%m-%dT%H:%M:%S%z"
+        if "creation_date" in data_description:
+            session_start_date_string = f"{data_description['creation_date']}T{data_description['creation_time'].split('.')[0]}"
+        else:
+            session_start_date_string = data_description["creation_time"]
+        session_id = data_description["name"]
+        if isinstance(data_description["institution"], str):
+            institution = data_description["institution"]
+        elif isinstance(data_description["institution"], dict):
+            institution = data_description["institution"].get("name", None)
 
-    if "creation_date" in data_description:
-        session_start_date_string = f"{data_description['creation_date']}T{data_description['creation_time'].split('.')[0]}"
+        # Use strptime to parse the string into a datetime object
+        try:
+            session_start_date_time = datetime.strptime(
+                session_start_date_string, date_format_tz
+            )
+        except:
+            session_start_date_time = datetime.strptime(
+                session_start_date_string, date_format_no_tz
+            ).replace(tzinfo=pytz.timezone("US/Pacific"))
     else:
-        session_start_date_string = data_description["creation_time"]
-    session_id = data_description["name"]
-    if isinstance(data_description["institution"], str):
-        institution = data_description["institution"]
-    elif isinstance(data_description["institution"], dict):
-        institution = data_description["institution"].get("name", None)
+        # create session_start_time
+        print(f"Missing data description file: {data_description_file}")
+        print(f"\tCreating mock info.")
+        timezone_info = datetime.now(dt.timezone.utc).astimezone().tzinfo
+        session_start_date_time = datetime.now().replace(tzinfo=timezone_info)
+        institution = None
+        session_id = data_asset.name
+        asset_name = session_id
 
-    # Use strptime to parse the string into a datetime object
-    try:
-        session_start_date_time = datetime.strptime(
-            session_start_date_string, date_format_tz
+    if subject_metadata is not None:
+        dob = subject_metadata["date_of_birth"]
+        subject_dob = datetime.strptime(dob, "%Y-%m-%d").replace(
+            tzinfo=pytz.timezone("US/Pacific")
         )
-    except:
-        session_start_date_time = datetime.strptime(
-            session_start_date_string, date_format_no_tz
-        ).replace(tzinfo=pytz.timezone("US/Pacific"))
-    subject_age = session_start_date_time - subject_dob
+        subject_age = session_start_date_time - subject_dob
 
-    age = "P" + str(subject_age) + "D"
-    if isinstance(subject_metadata["species"], dict):
-        species = subject_metadata["species"]["name"]
+        age = "P" + str(subject_age) + "D"
+        if isinstance(subject_metadata["species"], dict):
+            species = subject_metadata["species"]["name"]
+        else:
+            species = subject_metadata["species"]
+        subject = Subject(
+            subject_id=subject_metadata["subject_id"],
+            species=species,
+            sex=subject_metadata["sex"][0].upper(),
+            date_of_birth=subject_dob,
+            age=age,
+            genotype=subject_metadata["genotype"],
+            description=None,
+            strain=subject_metadata.get("background_strain")
+            or subject_metadata.get("breeding_group"),
+        )
     else:
-        species = subject_metadata["species"]
-    subject = Subject(
-        subject_id=subject_metadata["subject_id"],
-        species=species,
-        sex=subject_metadata["sex"][0].upper(),
-        date_of_birth=subject_dob,
-        age=age,
-        genotype=subject_metadata["genotype"],
-        description=None,
-        strain=subject_metadata.get("background_strain")
-        or subject_metadata.get("breeding_group"),
-    )
+        # create mock subject
+        print(f"Missing subject metadata file: {subject_metadata_file}")
+        print("\tCreating mock subject.")
+        from pynwb.testing.mock.file import mock_Subject
+        subject = mock_Subject()
 
     # Store and write NWB file
     nwbfile = NWBFile(
-        session_description="Test File",
+        session_description="NWB file generated by AIND pipeline",
         identifier=str(uuid4()),
         session_start_time=session_start_date_time,
         institution=institution,
