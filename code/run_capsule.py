@@ -111,6 +111,7 @@ def run():
         subject_metadata = results[0].subject
     else:
         nwb_files = [f for f in data_folder.glob("**/*.nwb")]
+        print(nwb_files)
         if len(nwb_files) == 1:
             nwb_input_file = nwb_files[0]
             asset_name = None
