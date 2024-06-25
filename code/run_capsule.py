@@ -110,7 +110,12 @@ def run():
         data_description = results[0].data_description
         subject_metadata = results[0].subject
     else:
-        nwb_files = [f for f in data_folder.glob() if f.suffix == ".nwb"]
+        nwb_files = [f for f in data_folder.glob("**/*.nwb")]
+        all_folders = [f for f in data_folder.iterdir() if f.is_dir()]
+        print(all_folders)
+        for f in all_folders:
+            all_subfolders = [p for p in f.iterdir() if p.is_dir()]
+            print(f"\t{f}: {all_subfolders}")
         print(nwb_files)
         if len(nwb_files) == 1:
             nwb_input_file = nwb_files[0]
