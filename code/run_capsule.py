@@ -152,12 +152,10 @@ def run():
         # copy NWB input file to results
         nwb_output_file = results_folder / nwb_input_file.name
         if nwb_input_file.is_dir():
-            from hdmf_zarr import NWBZarrIO
             backend = "zarr"
             # Zarr format is a directory
             io_class = NWBZarrIO
         else:
-            from pynwb import NWBHDF5IO
             backend = "hdf5"
             # HDF5 format is a file
             io_class = NWBHDF5IO
