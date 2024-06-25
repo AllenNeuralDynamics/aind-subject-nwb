@@ -147,6 +147,7 @@ def run():
         print(f"Found input NWB file: {nwb_files[0]}")
         # copy NWB input file to results
         nwb_output_file = results_folder / nwb_input_file.name
+        asset_name = nwb_input_file.stem
         if nwb_input_file.is_dir():
             backend = "zarr"
             # Zarr format is a directory
@@ -180,7 +181,7 @@ def run():
                 session_id=nwbfile_read.session_id,
             )
         print(f"\tBackend: {backend}")
-        print(f"\tAsset name: {nwb_input_file.name}")
+        print(f"\tAsset name: {asset_name}")
     else:
         print(f"Creating NWB file")
         print(f"\tBackend: {backend}")
