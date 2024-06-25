@@ -114,8 +114,8 @@ def run():
         all_folders = [f for f in data_folder.iterdir() if f.is_dir()]
         print(all_folders)
         for f in all_folders:
-            all_subfolders = [p for p in f.iterdir() if p.is_dir()]
-            print(f"\t{f}: {all_subfolders}")
+            all_subfiles = [p for p in f.iterdir()]
+            print(f"\t{f}: {all_subfiles}")
         print(nwb_files)
         if len(nwb_files) == 1:
             nwb_input_file = nwb_files[0]
