@@ -249,6 +249,9 @@ def run():
             subject_dob = datetime.strptime(dob, "%Y-%m-%d").replace(
                 tzinfo=pytz.timezone("US/Pacific")
             )
+            if session_start_date_time.tzinfo is None:
+                pacific = pytz.timezone('US/Pacific')
+                session_start_date_time = pacific.localize(session_start_date_time)
             subject_age = session_start_date_time - subject_dob
 
             age = "P" + str(subject_age) + "D"
