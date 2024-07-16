@@ -3,7 +3,7 @@
 import json
 import re
 import argparse
-import shutil
+import warnings
 from pathlib import Path
 import pytz
 import datetime as dt
@@ -110,12 +110,16 @@ def run():
         data_description = results[0].data_description
         subject_metadata = results[0].subject
     else:
-        input_folders = [f for f in data_folder.iterdir() if f.is_dir() and f.suffix != ".nwb"]
+        input_folders = [
+            f
+            for f in data_folder.iterdir()
+            if f.is_dir() and f.suffix != ".nwb"
+        ]
         if len(input_folders) == 1:
             input_folder = input_folders[0]
         else:
             input_folder = data_folder
-        nwb_files = [f for f in input_folder.iterdir() if f.suffix == '.nwb']
+        nwb_files = [f for f in input_folder.iterdir() if f.suffix == ".nwb"]
         if len(nwb_files) == 1:
             nwb_input_file = nwb_files[0]
             asset_name = None
@@ -169,7 +173,7 @@ def run():
                 age=subject_read.age,
                 genotype=subject_read.genotype,
                 description=subject_read.description,
-                strain=subject_read.strain
+                strain=subject_read.strain,
             )
 
             nwbfile = NWBFile(
@@ -191,6 +195,12 @@ def run():
             timezone_info = pytz.timezone("US/Pacific")
             date_format_no_tz = "%Y-%m-%dT%H:%M:%S"
             date_format_tz = "%Y-%m-%dT%H:%M:%S%z"
+            date_format_frac_tz = "%Y-%m-%dT%H:%M:%S.%f%z"
+            supported_date_formats = [
+                date_format_no_tz,
+                date_format_tz,
+                date_format_frac_tz,
+            ]
 
             if "creation_date" in data_description:
                 session_start_date_string = f"{data_description['creation_date']}T{data_description['creation_time'].split('.')[0]}"
@@ -203,20 +213,33 @@ def run():
                 institution = data_description["institution"].get("name", None)
 
             # Use strptime to parse the string into a datetime object
-            try:
-                session_start_date_time = datetime.strptime(
-                    session_start_date_string, date_format_tz
+            session_start_date_time = None
+            for date_format in supported_date_formats:
+                try:
+                    session_start_date_time = datetime.strptime(
+                        session_start_date_string, date_format
+                    )
+                    break
+                except:
+                    pass
+            if session_start_date_time is None:
+                warnings.warn(
+                    f"Could not parse date string: {session_start_date_string}. Using current time."
                 )
-            except:
-                session_start_date_time = datetime.strptime(
-                    session_start_date_string, date_format_no_tz
-                ).replace(tzinfo=pytz.timezone("US/Pacific"))
+                timezone_info = (
+                    datetime.now(dt.timezone.utc).astimezone().tzinfo
+                )
+                session_start_date_time = datetime.now().replace(
+                    tzinfo=timezone_info
+                )
         else:
             # create session_start_time
             print(f"Missing data description file: {data_description_file}")
             print(f"\tCreating mock info.")
             timezone_info = datetime.now(dt.timezone.utc).astimezone().tzinfo
-            session_start_date_time = datetime.now().replace(tzinfo=timezone_info)
+            session_start_date_time = datetime.now().replace(
+                tzinfo=timezone_info
+            )
             institution = None
             session_id = data_asset.name
             asset_name = session_id
@@ -226,6 +249,9 @@ def run():
             subject_dob = datetime.strptime(dob, "%Y-%m-%d").replace(
                 tzinfo=pytz.timezone("US/Pacific")
             )
+            if session_start_date_time.tzinfo is None:
+                pacific = pytz.timezone('US/Pacific')
+                session_start_date_time = pacific.localize(session_start_date_time)
             subject_age = session_start_date_time - subject_dob
 
             age = "P" + str(subject_age) + "D"
@@ -249,6 +275,7 @@ def run():
             print(f"Missing subject metadata file: {subject_metadata_file}")
             print("\tCreating mock subject.")
             from pynwb.testing.mock.file import mock_Subject
+
             subject = mock_Subject()
 
         # Store and write NWB file
@@ -269,6 +296,7 @@ def run():
         io.write(nwbfile)
 
     print(f"Saved {nwb_output_file}")
+
 
 if __name__ == "__main__":
     run()
