@@ -254,7 +254,7 @@ def run():
                 session_start_date_time = pacific.localize(session_start_date_time)
             subject_age = session_start_date_time - subject_dob
 
-            age = "P" + str(subject_age) + "D"
+            age = "P" + str(subject_age.days) + "D"
             if isinstance(subject_metadata["species"], dict):
                 species = subject_metadata["species"]["name"]
             else:
