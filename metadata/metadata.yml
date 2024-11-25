@@ -8,6 +8,11 @@ description: This specialized capsule is designed to create a base NWB file incl
   subject id, date of the session, and the physiology type of the sessions.
 tags:
 - NWB
+- Ophys
+- FIB
+- FIP
+- Ecephys
+- Subject
 authors:
 - name: AIND
 - name: Ahad Bawany
