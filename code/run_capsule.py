@@ -8,6 +8,8 @@ from pathlib import Path
 import pytz
 import datetime as dt
 from datetime import datetime
+from aind_log_utils import log
+import logging 
 
 from pynwb import NWBHDF5IO, NWBFile
 from pynwb.file import Subject
@@ -59,6 +61,8 @@ def run():
 
     if asset_name is not None and asset_name == "":
         asset_name = None
+    
+
     # hot-fix for parameter in pipeline
     if backend == "null":
         backend = args.backend
@@ -74,6 +78,21 @@ def run():
     if asset_name is not None:
         from aind_data_access_api.document_db import MetadataDbClient
 
+        # We look for mouse ID in the asset name
+        # if it exists
+        match = re.search(r'_(\d+)_', asset_name)
+
+        # Extract and print the match if found
+        if match:
+            subject_id = match.group(1)
+        else:
+            subject_id = None
+
+        log.setup_logging(
+            "aind-subject-nwb",
+            mouse_id=subject_id,
+            session_name=asset_name,
+        )
         doc_db_client = MetadataDbClient(
             host=DOC_DB_HOST,
             database=DOC_DB_DATABASE,
@@ -104,7 +123,7 @@ def run():
             paginate_batch_size=100,
         )
         if not results:
-            print("No data records found.")
+            logging.info("No data records found.")
             raise Exception("No data records found.")
 
         data_description = results[0].data_description
@@ -148,7 +167,7 @@ def run():
                 subject_metadata = None
 
     if nwb_input_file is not None:
-        print(f"Found input NWB file: {nwb_files[0]}")
+        logging.info(f"Found input NWB file: {nwb_files[0]}")
         # copy NWB input file to results
         nwb_output_file = results_folder / nwb_input_file.name
         asset_name = nwb_input_file.stem
@@ -184,12 +203,21 @@ def run():
                 subject=subject,
                 session_id=nwbfile_read.session_id,
             )
-        print(f"\tBackend: {backend}")
-        print(f"\tAsset name: {asset_name}")
+        logging.info(f"\tBackend: {backend}")
+        logging.info(f"\tAsset name: {asset_name}")
     else:
-        print(f"Creating NWB file")
-        print(f"\tBackend: {backend}")
-        print(f"\tAsset name: {asset_name}")
+        # We look for mouse ID in the subject metadata
+        match = re.search(r'_(\d+)_', subject_metadata["subject_id"])
+
+        # Extract and print the match if found
+        if match:
+            subject_id = match.group(1)
+        else:
+            subject_id = None
+        logging.info(f"Creating NWB file")
+        logging.info(f"\tBackend: {backend}")
+        logging.info(f"\tAsset name: {asset_name}")
+
         # create NWB file
         if data_description is not None:
             timezone_info = pytz.timezone("US/Pacific")
@@ -234,8 +262,8 @@ def run():
                 )
         else:
             # create session_start_time
-            print(f"Missing data description file: {data_description_file}")
-            print(f"\tCreating mock info.")
+            logging.info(f"Missing data description file: {data_description_file}")
+            logging.info(f"\tCreating mock info.")
             timezone_info = datetime.now(dt.timezone.utc).astimezone().tzinfo
             session_start_date_time = datetime.now().replace(
                 tzinfo=timezone_info
@@ -272,8 +300,8 @@ def run():
             )
         else:
             # create mock subject
-            print(f"Missing subject metadata file: {subject_metadata_file}")
-            print("\tCreating mock subject.")
+            logging.info(f"Missing subject metadata file: {subject_metadata_file}")
+            logging.info("\tCreating mock subject.")
             from pynwb.testing.mock.file import mock_Subject
 
             subject = mock_Subject()
@@ -295,7 +323,7 @@ def run():
     with io_class(str(nwb_output_file), mode="w") as io:
         io.write(nwbfile)
 
-    print(f"Saved {nwb_output_file}")
+    logging.info(f"Saved {nwb_output_file}")
 
 
 if __name__ == "__main__":
