@@ -62,20 +62,6 @@ def run():
     if asset_name is not None and asset_name == "":
         asset_name = None
     
-    # We look for mouse ID in the asset name
-    match = re.search(r'_(\d+)_', asset_name)
-
-    # Extract and print the match if found
-    if match:
-        subject_id = match.group(1)
-    else:
-        subject_id = None
-
-    log.setup_logging(
-        "aind-subject-nwb",
-        mouse_id=subject_id,
-        session_name=asset_name,
-    )
 
     # hot-fix for parameter in pipeline
     if backend == "null":
@@ -92,6 +78,21 @@ def run():
     if asset_name is not None:
         from aind_data_access_api.document_db import MetadataDbClient
 
+        # We look for mouse ID in the asset name
+        # if it exists
+        match = re.search(r'_(\d+)_', asset_name)
+
+        # Extract and print the match if found
+        if match:
+            subject_id = match.group(1)
+        else:
+            subject_id = None
+
+        log.setup_logging(
+            "aind-subject-nwb",
+            mouse_id=subject_id,
+            session_name=asset_name,
+        )
         doc_db_client = MetadataDbClient(
             host=DOC_DB_HOST,
             database=DOC_DB_DATABASE,
@@ -205,9 +206,18 @@ def run():
         logging.info(f"\tBackend: {backend}")
         logging.info(f"\tAsset name: {asset_name}")
     else:
+        # We look for mouse ID in the subject metadata
+        match = re.search(r'_(\d+)_', subject_metadata["subject_id"])
+
+        # Extract and print the match if found
+        if match:
+            subject_id = match.group(1)
+        else:
+            subject_id = None
         logging.info(f"Creating NWB file")
         logging.info(f"\tBackend: {backend}")
         logging.info(f"\tAsset name: {asset_name}")
+
         # create NWB file
         if data_description is not None:
             timezone_info = pytz.timezone("US/Pacific")
