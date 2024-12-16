@@ -8,11 +8,20 @@ from pathlib import Path
 import pytz
 import datetime as dt
 from datetime import datetime
+import logging
 
 from pynwb import NWBHDF5IO, NWBFile
 from pynwb.file import Subject
 from hdmf_zarr import NWBZarrIO
 from uuid import uuid4
+
+# AIND
+try:
+    from aind_log_utils import log
+
+    HAVE_AIND_LOG_UTILS = True
+except ImportError:
+    HAVE_AIND_LOG_UTILS = False
 
 
 DOC_DB_HOST = "api.allenneuraldynamics.org"
@@ -104,11 +113,13 @@ def run():
             paginate_batch_size=100,
         )
         if not results:
-            print("No data records found.")
+            logging.info("No data records found.")
             raise Exception("No data records found.")
 
         data_description = results[0].data_description
         subject_metadata = results[0].subject
+        subject_id = subject_metadata["subject_id"]
+        session_name = data_description["name"]
     else:
         input_folders = [
             f
@@ -123,6 +134,8 @@ def run():
         if len(nwb_files) == 1:
             nwb_input_file = nwb_files[0]
             asset_name = None
+            subject_id = "undefined"
+            session_name = "undefined"
         else:
             # In we expect a single data folder as input
             data_assets = [p for p in data_folder.iterdir() if p.is_dir()]
@@ -134,21 +147,33 @@ def run():
             data_asset = data_assets[0]
             data_description_file = data_asset / "data_description.json"
             subject_metadata_file = data_asset / "subject.json"
+            session_name = "undefined"
             if data_description_file.is_file():
                 with open(data_description_file) as f:
                     data_description = json.load(f)
                 asset_name = data_description["name"]
+                session_name = asset_name
             else:
                 data_description = None
                 asset_name = None
+
+            subject_id = "undefined"
             if subject_metadata_file.is_file():
                 with open(subject_metadata_file) as f:
                     subject_metadata = json.load(f)
+                subject_id = subject_metadata["subject_id"]
             else:
                 subject_metadata = None
 
+    if HAVE_AIND_LOG_UTILS:
+        log.setup_logging(
+            "NWB Packaging Subject",
+            mouse_id=subject_id,
+            session_name=session_name,
+        )
+
     if nwb_input_file is not None:
-        print(f"Found input NWB file: {nwb_files[0]}")
+        logging.info(f"Found input NWB file: {nwb_files[0]}")
         # copy NWB input file to results
         nwb_output_file = results_folder / nwb_input_file.name
         asset_name = nwb_input_file.stem
@@ -184,12 +209,12 @@ def run():
                 subject=subject,
                 session_id=nwbfile_read.session_id,
             )
-        print(f"\tBackend: {backend}")
-        print(f"\tAsset name: {asset_name}")
+        logging.info(f"\tBackend: {backend}")
+        logging.info(f"\tAsset name: {asset_name}")
     else:
-        print(f"Creating NWB file")
-        print(f"\tBackend: {backend}")
-        print(f"\tAsset name: {asset_name}")
+        logging.info(f"Creating NWB file")
+        logging.info(f"\tBackend: {backend}")
+        logging.info(f"\tAsset name: {asset_name}")
         # create NWB file
         if data_description is not None:
             timezone_info = pytz.timezone("US/Pacific")
@@ -234,8 +259,8 @@ def run():
                 )
         else:
             # create session_start_time
-            print(f"Missing data description file: {data_description_file}")
-            print(f"\tCreating mock info.")
+            logging.info(f"Missing data description file: {data_description_file}")
+            logging.info(f"\tCreating mock info.")
             timezone_info = datetime.now(dt.timezone.utc).astimezone().tzinfo
             session_start_date_time = datetime.now().replace(
                 tzinfo=timezone_info
@@ -272,8 +297,8 @@ def run():
             )
         else:
             # create mock subject
-            print(f"Missing subject metadata file: {subject_metadata_file}")
-            print("\tCreating mock subject.")
+            logging.info(f"Missing subject metadata file: {subject_metadata_file}")
+            logging.info("\tCreating mock subject.")
             from pynwb.testing.mock.file import mock_Subject
 
             subject = mock_Subject()
@@ -295,7 +320,7 @@ def run():
     with io_class(str(nwb_output_file), mode="w") as io:
         io.write(nwbfile)
 
-    print(f"Saved {nwb_output_file}")
+    logging.info(f"Saved {nwb_output_file}")
 
 
 if __name__ == "__main__":
