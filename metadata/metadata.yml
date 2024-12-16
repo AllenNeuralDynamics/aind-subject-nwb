@@ -1,5 +1,5 @@
 metadata_version: 1
-name: NWB-Packaging-Subject-Capsule
+name: NWB Packaging Subject
 description: This specialized capsule is designed to create a base NWB file including
   metadata related to the institute and subject. This should serve as the foundation
   used by capsules further downstreams as they create their own intermediary NWB files.
