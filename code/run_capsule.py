@@ -113,7 +113,6 @@ def run():
             paginate_batch_size=100,
         )
         if not results:
-            logging.info("No data records found.")
             raise Exception("No data records found.")
 
         data_description = results[0].data_description
@@ -171,6 +170,8 @@ def run():
             mouse_id=subject_id,
             session_name=session_name,
         )
+    else:
+        logging.basicConfig(level=logging.INFO, format="%(message)s")
 
     if nwb_input_file is not None:
         logging.info(f"Found input NWB file: {nwb_files[0]}")
