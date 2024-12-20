@@ -173,6 +173,8 @@ def run():
     else:
         logging.basicConfig(level=logging.INFO, format="%(message)s")
 
+    logging.info("NWB EXPORT SUBJECT")
+
     if nwb_input_file is not None:
         logging.info(f"Found input NWB file: {nwb_files[0]}")
         # copy NWB input file to results
