@@ -1,4 +1,4 @@
-# hash:sha256:aab2a49aa067a3bb98d91dc3016a79f2ffd400f78316a704cf26f39ababc767b
+# hash:sha256:b1ab0d054522f225395bf8fc0dd6fd544b5ac8b78df39b7896955ec5216f6523
 ARG REGISTRY_HOST
 FROM $REGISTRY_HOST/codeocean/jupyterlab:3.6.1-miniconda4.12.0-python3.9-ubuntu20.04
 
@@ -15,5 +15,5 @@ RUN pip install -U --no-cache-dir \
     aind-data-access-api==0.6.1 \
     aind-log-utils==0.2.1 \
     boto3==1.28.72 \
-    hdmf-zarr==0.8.0 \
-    pynwb==2.8.1
+    hdmf-zarr==0.10.0 \
+    pynwb==2.8.3
